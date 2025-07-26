@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediBot AI - Your Health Assistant</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            height: 100%;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 25%, #0f0f0f 50%, #1c1c1c 75%, #0a0a0a 100%);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated background particles */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(0, 255, 136, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 191, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(138, 43, 226, 0.08) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-20px) rotate(120deg); }
+            66% { transform: translateY(20px) rotate(240deg); }
+        }
+
+        /* Glassmorphism container */
+        .chat-container {
+            backdrop-filter: blur(20px);
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.4);
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .chat-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.4), transparent);
+        }
+
+        /* Header */
+        .chat-header {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(20, 20, 20, 0.9));
+            padding: 20px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+        }
+
+        .chat-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(0, 255, 136, 0.1), transparent);
+            animation: rotate 10s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes rotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        .bot-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 2;
+        }
+
+        .online-pulse {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #00ff88;
+            border-radius: 50%;
+            bottom: 5px;
+            right: 5px;
+            box-shadow: 0 0 20px #00ff88;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .bot-info {
+            margin-left: 15px;
+            z-index: 2;
+            position: relative;
+        }
+
+        .bot-name {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .bot-status {
+            font-size: 14px;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        /* Messages area */
+        .messages-container {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .messages-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .messages-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        /* Message bubbles */
+        .message {
+            display: flex;
+            margin-bottom: 20px;
+            animation: messageSlide 0.4s ease-out;
+        }
+
+        @keyframes messageSlide {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .user-message {
+            justify-content: flex-end;
+        }
+
+        .bot-message {
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            position: relative;
+            backdrop-filter: blur(10px);
+            word-wrap: break-word;
+        }
+
+        .user-message .message-bubble {
+            background: linear-gradient(135deg, rgba(76, 201, 240, 0.8), rgba(99, 125, 255, 0.8));
+            color: white;
+            margin-right: 10px;
+            box-shadow: 0 10px 25px rgba(76, 201, 240, 0.3);
+        }
+
+        .bot-message .message-bubble {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            margin-left: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-time {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .bot-message .message-time {
+            text-align: left;
+        }
+
+        /* Input area */
+        .input-container {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .input-group {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            padding: 8px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .input-group:focus-within {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            border-color: rgba(76, 201, 240, 0.5);
+        }
+
+        .message-input {
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 20px;
+            outline: none;
+            flex: 1;
+        }
+
+        .message-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .send-button:hover {
+            transform: scale(1.1) rotate(10deg);
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.5);
+        }
+
+        .send-button:active {
+            transform: scale(0.95) rotate(10deg);
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: none;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            margin: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        /* Responsive */
+        @media (max-width: 576px) {
+            .chat-container {
+                margin: 1rem;
+                height: calc(100vh - 2rem);
+            }
+            
+            .messages-container {
+                height: calc(100vh - 240px);
+            }
+        }
+
+        /* Welcome message */
+        .welcome-message {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            padding: 40px 20px;
+            margin-top: 50px;
+        }
+
+        .welcome-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .welcome-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .welcome-subtitle {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid h-100 d-flex align-items-center justify-content-center">
+        <div class="chat-container">
+            <!-- Header -->
+            <div class="chat-header d-flex align-items-center">
+                <div class="bot-avatar">
+                    <i class="fas fa-robot"></i>
+                    <div class="online-pulse"></div>
+                </div>
+                <div class="bot-info">
+                    <div class="bot-name">MediBot AI</div>
+                    <div class="bot-status">Your intelligent health assistant</div>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div id="messagesContainer" class="messages-container">
+                <div class="welcome-message">
+                    <div class="welcome-icon">
+                        <i class="fas fa-stethoscope"></i>
+                    </div>
+                    <div class="welcome-title">Welcome to MediBot AI</div>
+                    <div class="welcome-subtitle">Ask me anything about your health concerns!</div>
+                </div>
+            </div>
+
+            <!-- Typing indicator -->
+            <div id="typingIndicator" class="typing-indicator">
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+
+            <!-- Input -->
+            <div class="input-container">
+                <form id="messageForm" class="input-group d-flex align-items-center">
+                    <input type="text" id="messageInput" class="message-input" placeholder="Type your health question..." autocomplete="off" required>
+                    <button type="submit" class="send-button">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            const messagesContainer = $('#messagesContainer');
+            const typingIndicator = $('#typingIndicator');
+            const messageInput = $('#messageInput');
+            
+            function getCurrentTime() {
+                const now = new Date();
+                return now.getHours().toString().padStart(2, '0') + ':' + 
+                       now.getMinutes().toString().padStart(2, '0');
+            }
+            
+            function scrollToBottom() {
+                messagesContainer.scrollTop(messagesContainer[0].scrollHeight);
+            }
+            
+            function addMessage(text, isUser = false) {
+                const time = getCurrentTime();
+                const messageClass = isUser ? 'user-message' : 'bot-message';
+                
+                const messageHtml = `
+                    <div class="message ${messageClass}">
+                        <div class="message-bubble">
+                            ${text}
+                            <div class="message-time">${time}</div>
+                        </div>
+                    </div>
+                `;
+                
+                // Remove welcome message on first interaction
+                if (messagesContainer.find('.welcome-message').length > 0) {
+                    messagesContainer.find('.welcome-message').fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                }
+                
+                messagesContainer.append(messageHtml);
+                scrollToBottom();
+            }
+            
+            function showTyping() {
+                typingIndicator.slideDown(200);
+                scrollToBottom();
+            }
+            
+            function hideTyping() {
+                typingIndicator.slideUp(200);
+            }
+            
+            $('#messageForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                const userMessage = messageInput.val().trim();
+                if (!userMessage) return;
+                
+                // Add user message
+                addMessage(userMessage, true);
+                messageInput.val('');
+                
+                // Show typing indicator
+                showTyping();
+                
+                // Simulate API call
+                $.ajax({
+                    data: { msg: userMessage },
+                    type: "POST",
+                    url: "/get",
+                }).done(function(data) {
+                    hideTyping();
+                    setTimeout(() => {
+                        addMessage(data);
+                    }, 300);
+                }).fail(function() {
+                    hideTyping();
+                    setTimeout(() => {
+                        addMessage("I'm sorry, I'm having trouble connecting right now. Please try again later.");
+                    }, 300);
+                });
+            });
+            
+            // Auto-focus input
+            messageInput.focus();
+            
+            // Handle enter key
+            messageInput.on('keypress', function(e) {
+                if (e.which === 13) {
+                    $('#messageForm').submit();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
