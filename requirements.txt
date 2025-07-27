@@ -27,7 +27,7 @@ filetype==1.2.0
 Flask==3.1.1
 frozenlist==1.7.0
 fsspec==2025.7.0
--e git+https://github.com/MuhammadOwais03/MedicalChatbot.git@223c74041e5124c68faf37bd1255c18b0634fc5b#egg=Generative_AI_Medical_Chatbot
+-e git+https://github.com/MuhammadOwais03/MedicalChatbot.git@31fe50d4173a63cc24214fdb90af1453cb042f07#egg=Generative_AI_Medical_Chatbot
 google-ai-generativelanguage==0.6.18
 google-api-core==2.25.1
 google-auth==2.40.3
